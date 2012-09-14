@@ -95,28 +95,48 @@ Cabernet.Datagrid = Ember.View.extend({
             {{view Cabernet.Datagrid.Columnpicker columnsBinding="columnsForDisplay"}} \
             <div class="filterbar"> \
                 <h5>{{filtersText}}</h5> \
-                {{view Cabernet.Datagrid.Filterbar appliedFiltersBinding="appliedFilters" filterableColumnsBinding="columnsForDisplay"}} \
+                {{view Cabernet.Datagrid.Filterbar appliedFiltersBinding="appliedFilters" filterableColumnsBinding="filterableColumns"}} \
             </div> \
         </div> \
-        <table> \
-            <thead> \
-                {{view Cabernet.Datagrid.Head itemViewClass="Cabernet.Datagrid.ColumnHeader" contentBinding="displayedColumns"}} \
-            </thead> \
-            {{view Cabernet.Datagrid.Body itemViewClass="Cabernet.Datagrid.Row" contentBinding="displayedData" columnsBinding="columnsForDisplay"}} \
-        </table>'),
+        {{#if emptyData}} \
+            <div class="datagrid-empty"><p>{{emptyText}}</p></div> \
+        {{else}} \
+            <table> \
+                <thead> \
+                    {{view Cabernet.Datagrid.Head itemViewClass="Cabernet.Datagrid.ColumnHeader" contentBinding="displayedColumns"}} \
+                </thead> \
+                {{view Cabernet.Datagrid.Body itemViewClass="Cabernet.Datagrid.Row" contentBinding="displayedData" columnsBinding="columnsForDisplay"}} \
+            </table> \
+        {{/if}}'),
 
 	data: [],
 	modelType: null,
 	columns: null,
+	filters: null,
     custom: {},
     defaultSort: null,
     filtersText: 'Filter by',
+    emptyText: 'No results found',
     sessionBucket: null,
 
     classNames: ['datagrid'],
     columnsForDisplay: null,
     appliedFilters: [],
     displayedData: [],
+    
+    filterableColumns: function() {
+        var toFilter = this.get('filters');
+        return toFilter ? 
+            this.get('columnsForDisplay').filter(function(col) {
+                return toFilter.contains(col.get("name"));
+            }) :
+            this.get('columnsForDisplay');
+    }.property('columnsForDisplay', 'filters'),
+
+    emptyData: function() {
+        return this.get('displayedData').get('length') === 0;
+    }.property('displayedData'),
+
     displayedColumns: function() {
         return this.get('columnsForDisplay').filterProperty('displayed');
     }.property('columnsForDisplay.@each.displayed'),
@@ -249,9 +269,6 @@ Cabernet.Datagrid = Ember.View.extend({
 Cabernet.Datagrid.Body = Ember.CollectionView.extend({
     tagName: 'tbody',
     rowTemplate: null,
-    emptyView: Ember.View.extend({
-      template: Ember.Handlebars.compile("The collection is empty")
-    }),
 
     init: function() {
         this.refreshRowTemplate();
